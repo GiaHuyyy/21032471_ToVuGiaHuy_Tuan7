@@ -1,14 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { Text, View } from "react-native";
+import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Screen02 = () => {
   return (
-    <View>
+    <SafeAreaView>
       <Text>Screen02</Text>
-    </View>
-  )
-}
+    </SafeAreaView>
+  );
+};
 
-export default Screen02
-
-const styles = StyleSheet.create({})
+export default Screen02;
