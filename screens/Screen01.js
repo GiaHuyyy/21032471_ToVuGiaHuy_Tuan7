@@ -1,4 +1,4 @@
-import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, TextInput, View, StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -9,29 +9,6 @@ import axios from "axios";
 const Screen01 = () => {
   const navigation = useNavigation();
   const [isPassword, setIsPassword] = useState(false);
-  // const users = [
-  //   {
-  //     email: "abc@gmail.com",
-  //     password: "12345",
-  //   },
-  //   {
-  //     email: "abc1@gmail.com",
-  //     password: "12345",
-  //   },
-  //   {
-  //     email: "abc2@gmail.com",
-  //     password: "12345",
-  //   },
-  //   {
-  //     email: "abc3@gmail.com",
-  //     password: "12345",
-  //   },
-  //   {
-  //     email: "abc4@gmail.com",
-  //     password: "12345",
-  //   },
-  // ];
-
   const [submit, setSubmit] = useState({
     email: "abc@gmail.com",
     password: "",
@@ -63,63 +40,32 @@ const Screen01 = () => {
       }
     }
   };
-  return (
-    <SafeAreaView style={{ backgroundColor: "#fff", flex: 1 }}>
-      <ScrollView>
-        <View style={{ marginTop: 70, alignItems: "center", paddingHorizontal: 40 }}>
-          <Image source={require("../assets/Data/icon.png")} />
-          <Text style={{ marginTop: 16, fontSize: 28, fontWeight: 700 }}>Hello Again!</Text>
-          <Text style={{ marginTop: 6, fontSize: 12, color: "#c6c9d1" }}>Log into your account</Text>
 
-          <View style={{ marginTop: 30, gap: 16, width: "100%" }}>
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingLeft: 10,
-                width: "100%",
-                height: 40,
-                borderRadius: 10,
-                borderColor: "#c6c9d1",
-                borderWidth: 1,
-              }}
-            >
+  return (
+    <SafeAreaView style={styles.safeAreaView}>
+      <ScrollView>
+        <View style={styles.container}>
+          <Image source={require("../assets/Data/icon.png")} />
+          <Text style={styles.title}>Hello Again!</Text>
+          <Text style={styles.subtitle}>Log into your account</Text>
+
+          <View style={styles.inputContainer}>
+            <Pressable style={styles.inputBox}>
               <MaterialCommunityIcons name="email-outline" size={24} color="black" />
               <TextInput
                 placeholder="Enter your email address"
                 placeholderTextColor={"#c6c9d1"}
-                style={{
-                  flex: 1,
-                  height: "100%",
-                  paddingLeft: 10,
-                  outline: "none",
-                }}
+                style={[styles.textInput, { outline: "none" }]}
                 value={submit.email}
                 onChangeText={(text) => setSubmit({ ...submit, email: text })}
               />
             </Pressable>
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: 10,
-                width: "100%",
-                height: 40,
-                borderRadius: 10,
-                borderColor: "#c6c9d1",
-                borderWidth: 1,
-              }}
-            >
+            <Pressable style={styles.inputBox}>
               <Image source={require("../assets/Data/lock.png")} />
               <TextInput
                 placeholder="Enter your password"
                 placeholderTextColor={"#c6c9d1"}
-                style={{
-                  flex: 1,
-                  height: "100%",
-                  paddingLeft: 10,
-                  outline: "none",
-                }}
+                style={[styles.textInput, { outline: "none" }]}
                 onChangeText={(text) => setSubmit({ ...submit, password: text })}
                 secureTextEntry={!isPassword}
               />
@@ -128,32 +74,21 @@ const Screen01 = () => {
               </TouchableOpacity>
             </Pressable>
             <TouchableOpacity>
-              <Text style={{ color: "#519ca6", textAlign: "right" }}>Forgot password?</Text>
+              <Text style={styles.forgotPassword}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={{
-              marginTop: 20,
-              height: 40,
-              width: "100%",
-              backgroundColor: "#00bdd6",
-              borderRadius: 10,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={handleSubmit}
-          >
-            <Text style={{ color: "#fff", fontSize: 16 }}>Continute</Text>
+          <TouchableOpacity style={styles.continueButton} onPress={handleSubmit}>
+            <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
 
-          <View style={{ marginTop: 30, flexDirection: "row", alignItems: "center", width: "100%" }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#c6c9d1" }}></View>
-            <Text style={{ marginHorizontal: 10, color: "#ccc" }}>or</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#c6c9d1" }}></View>
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider}></View>
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.divider}></View>
           </View>
 
-          <View style={{ flexDirection: "row", marginTop: 16, gap: 8 }}>
+          <View style={styles.socialContainer}>
             <TouchableOpacity>
               <Image source={require("../assets/Data/google.png")} />
             </TouchableOpacity>
@@ -169,5 +104,84 @@ const Screen01 = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeAreaView: {
+    backgroundColor: "#fff",
+    flex: 1,
+  },
+  container: {
+    marginTop: 70,
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  title: {
+    marginTop: 16,
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  subtitle: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#c6c9d1",
+  },
+  inputContainer: {
+    marginTop: 30,
+    gap: 16,
+    width: "100%",
+  },
+  inputBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 10,
+    width: "100%",
+    height: 40,
+    borderRadius: 10,
+    borderColor: "#c6c9d1",
+    borderWidth: 1,
+  },
+  textInput: {
+    flex: 1,
+    height: "100%",
+    paddingLeft: 10,
+  },
+  forgotPassword: {
+    color: "#519ca6",
+    textAlign: "right",
+  },
+  continueButton: {
+    marginTop: 20,
+    height: 40,
+    width: "100%",
+    backgroundColor: "#00bdd6",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  continueButtonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  dividerContainer: {
+    marginTop: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#c6c9d1",
+  },
+  orText: {
+    marginHorizontal: 10,
+    color: "#ccc",
+  },
+  socialContainer: {
+    flexDirection: "row",
+    marginTop: 16,
+    gap: 8,
+  },
+});
 
 export default Screen01;

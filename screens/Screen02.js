@@ -1,11 +1,10 @@
-import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TouchableOpacity } from "react-native";
+import { Image, Pressable, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import axios from "axios";
 
@@ -16,44 +15,11 @@ const Screen02 = () => {
   const [focus, setFocus] = useState("smart");
   const [selectedOption, setSelectedOption] = useState("Best Sales");
   const [product, setProduct] = useState([]);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
-  const CategoryItem = ({ image, backgroundColor, type }) => {
-    return (
-      <Pressable
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: `${backgroundColor}`,
-          borderRadius: 8,
-          height: 100,
-          borderWidth: 2,
-          borderColor: focus === type ? "#a59ac6" : "transparent",
-        }}
-        onPress={() => setFocus(type)}
-      >
-        <Image source={image} />
-      </Pressable>
-    );
-  };
-
-  const OptionItem = ({ title }) => {
-    return (
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          height: 26,
-          borderRadius: 10,
-          backgroundColor: selectedOption === title ? "#ebfdff" : "transparent",
-        }}
-        onPress={() => setSelectedOption(title)}
-      >
-        <Text style={{ color: selectedOption === title ? "#42b7c6" : "black" }}>{title}</Text>
-      </TouchableOpacity>
-    );
-  };
+  // Tạo ref cho TextInput
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -67,137 +33,149 @@ const Screen02 = () => {
     fetchProducts();
   }, []);
 
-  const ProductItem = ({ item }) => {
-    console.log(item.image);
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          padding: 10,
-          borderWidth: 1,
-          borderColor: "#dce1eb",
-          borderRadius: 10,
-        }}
-      >
-        <Image source={{ uri: item.image }} style={{ width: 60, height: 60 }} resizeMode="contain" />
-        <View style={{ rowGap: 12, marginLeft: 14 }}>
-          <Text style={{ fontSize: 16, fontWeight: 700, marginTop: 10 }}>{item.title}</Text>
-          <Image source={require("../assets/Data/ratting.png")} />
-        </View>
-        <View style={{ marginLeft: "auto", rowGap: 4 }}>
-          <TouchableOpacity>
-            <Image
-              source={require("../assets/Data/plus.png")}
-              style={{ width: 20, height: 20, marginLeft: "auto" }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-          <Text style={{ fontSize: 16, fontWeight: "bold" }}>{item.price}</Text>
-        </View>
-      </View>
-    );
-  };
+  const handleSearchChange = useCallback((text) => {
+    setSearchKeyword(text);
+  }, []);
 
-  const renderProducts = () => {
+  // Focus vào lại TextInput
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchKeyword]);
+
+  const filteredProducts = useMemo(() => {
     const selectedCategory = product.find((item) => item[focus]);
-    if (!selectedCategory) return null;
+    if (!selectedCategory) return [];
 
-    return selectedCategory[focus].map((item) => <ProductItem key={item.id} item={item} />);
-  };
+    const productsToShow = showAllProducts ? selectedCategory[focus] : selectedCategory[focus].slice(0, 4);
+    // Lọc sản phẩm dựa trên selectedOption và searchKeyword
+    // const filteredProducts = productsToShow.filter((item) => {
+    //   const matchesOption = item.category === selectedOption;
+    //   const matchesKeyword = item.title.toLowerCase().includes(searchKeyword.toLowerCase());
+    //   return matchesOption && matchesKeyword;
+    // });
 
+    return productsToShow.filter((item) => item.title.toLowerCase().includes(searchKeyword.toLowerCase()));
+  }, [product, focus, showAllProducts, searchKeyword]);
+
+  const renderProducts = useCallback(
+    () => filteredProducts.map((item) => <ProductItem key={item.id} item={item} />),
+    [filteredProducts]
+  );
+
+  const CategoryItem = useCallback(
+    ({ image, backgroundColor, type }) => {
+      return (
+        <Pressable
+          style={[styles.categoryItem, { backgroundColor, borderColor: focus === type ? "#a59ac6" : "transparent" }]}
+          onPress={() => {
+            setFocus(type);
+            setShowAllProducts(false);
+          }}
+        >
+          <Image source={image} />
+        </Pressable>
+      );
+    },
+    [focus]
+  );
+
+  const OptionItem = useCallback(
+    ({ title }) => {
+      return (
+        <TouchableOpacity
+          style={[styles.optionItem, { backgroundColor: selectedOption === title ? "#ebfdff" : "transparent" }]}
+          onPress={() => setSelectedOption(title)}
+        >
+          <Text style={{ color: selectedOption === title ? "#42b7c6" : "black" }}>{title}</Text>
+        </TouchableOpacity>
+      );
+    },
+    [selectedOption]
+  );
+
+  const ProductItem = ({ item }) => (
+    <View style={styles.productItem}>
+      <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="contain" />
+      <View style={styles.productInfo}>
+        <Text style={styles.productTitle}>{item.title}</Text>
+        <Image source={require("../assets/Data/ratting.png")} />
+      </View>
+      <View style={styles.productPriceContainer}>
+        <TouchableOpacity>
+          <Image source={require("../assets/Data/plus.png")} style={styles.productPlusIcon} resizeMode="contain" />
+        </TouchableOpacity>
+        <Text style={styles.productPrice}>{item.price}</Text>
+      </View>
+    </View>
+  );
   const MainScreen = () => {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <SafeAreaView style={styles.safeAreaView}>
         <ScrollView>
-          <View style={{ paddingHorizontal: 20 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{ flexDirection: "row", alignItems: "center", columnGap: 10 }}
-              >
-                <Text style={{ fontSize: 20, fontWeight: 600 }}>{"<"}</Text>
-                <Text style={{ fontSize: 22, fontWeight: 700 }}>ELectronics</Text>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <Text style={styles.backButtonText}>{"<"}</Text>
+                <Text style={styles.headerTitle}>Electronics</Text>
               </TouchableOpacity>
-              <View style={{ flexDirection: "row", alignItems: "center", columnGap: 6 }}>
+              <View style={styles.headerIcons}>
                 <TouchableOpacity>
                   <AntDesign name="shoppingcart" size={24} color="black" />
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <Image
-                    source={require("../assets/Data/avatar.png")}
-                    style={{ width: 40, height: 40, borderRadius: "50%" }}
-                  />
+                  <Image source={require("../assets/Data/avatar.png")} style={styles.avatar} />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={{ flexDirection: "row", columnGap: 14, marginTop: 24, height: 36 }}>
-              <Pressable
-                style={{
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#f3f4f6",
-                  paddingLeft: 10,
-                }}
-              >
-                <Image source={require("../assets/Data/search.png")} style={{ height: 16, width: 16 }} />
+            <View style={styles.searchContainer}>
+              <Pressable style={styles.searchBox}>
+                <Image source={require("../assets/Data/search.png")} style={styles.searchIcon} />
                 <TextInput
+                  ref={searchInputRef} // Sử dụng ref cho TextInput
                   placeholder="Search"
-                  placeholderTextColor={"#c6c9d1"}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    paddingLeft: 10,
-                    outline: "none",
-                  }}
+                  placeholderTextColor="#c6c9d1"
+                  style={[styles.searchInput, { outline: "none" }]}
+                  onChangeText={handleSearchChange}
+                  value={searchKeyword}
                 />
               </Pressable>
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#f3f4f6",
-                  padding: 10,
-                }}
-              >
+              <TouchableOpacity style={styles.filterButton}>
                 <MaterialIcons name="filter-list" size={16} color="black" />
               </TouchableOpacity>
             </View>
 
-            <View
-              style={{ marginTop: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: 700 }}>Categories</Text>
-              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", columnGap: 6, marginRight: 14 }}>
-                <Text style={{ color: "#c6c9d1" }}>See all</Text>
-                <Text style={{ color: "#ccc" }}>{">"}</Text>
+            <View style={styles.categoriesHeader}>
+              <Text style={styles.categoriesTitle}>Categories</Text>
+              <TouchableOpacity style={styles.seeAllButton} onPress={() => setShowAllProducts((prev) => !prev)}>
+                <Text style={styles.seeAllText}>{showAllProducts ? "See less" : "See all"}</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Categories */}
-            <View style={{ flexDirection: "row", alignItems: "center", columnGap: 20, marginTop: 10 }}>
+            <View style={styles.categoriesContainer}>
               <CategoryItem image={require("../assets/Data/smart.png")} backgroundColor="#dbcaf6" type="smart" />
               <CategoryItem image={require("../assets/Data/ipad.png")} backgroundColor="#c5d1f7" type="ipad" />
               <CategoryItem image={require("../assets/Data/macbook.png")} backgroundColor="#f8d8bf" type="macbook" />
             </View>
 
-            {/* Option */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20 }}>
+            <View style={styles.optionsContainer}>
               <OptionItem title="Best Sales" />
               <OptionItem title="Best Matched" />
               <OptionItem title="Popular" />
             </View>
 
-            {/* Product */}
-            <View style={{ marginTop: 20, rowGap: 14 }}>{renderProducts()}</View>
+            <View style={styles.productsContainer}>{renderProducts()}</View>
+
+            <TouchableOpacity style={styles.seeAllProductsButton} onPress={() => setShowAllProducts((prev) => !prev)}>
+              <Text style={styles.seeAllProductsText}>{showAllProducts ? "See less" : "See all"}</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
     );
   };
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -215,20 +193,7 @@ const Screen02 = () => {
             return (
               <View>
                 <AntDesign name={iconName} size={size} color={color} />
-                <Text
-                  style={{
-                    position: "absolute",
-                    top: -3,
-                    right: -14,
-                    backgroundColor: "red",
-                    color: "white",
-                    borderRadius: 50,
-                    paddingHorizontal: 4,
-                    fontSize: 10,
-                  }}
-                >
-                  99+
-                </Text>
+                <Text style={styles.badge}>99+</Text>
               </View>
             );
           } else if (route.name === "Inbox") {
@@ -253,5 +218,180 @@ const Screen02 = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  safeAreaView: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  container: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 10,
+  },
+  backButtonText: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 6,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    columnGap: 14,
+    marginTop: 24,
+    height: 36,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    paddingLeft: 10,
+  },
+  searchIcon: {
+    height: 16,
+    width: 16,
+  },
+  searchInput: {
+    width: "100%",
+    height: "100%",
+    paddingLeft: 10,
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    padding: 10,
+  },
+  categoriesHeader: {
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  categoriesTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  seeAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 6,
+    marginRight: 14,
+  },
+  seeAllText: {
+    color: "#c6c9d1",
+  },
+  seeAllArrow: {
+    color: "#ccc",
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 20,
+    marginTop: 10,
+  },
+  categoryItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    height: 100,
+    borderWidth: 2,
+  },
+  optionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  optionItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    height: 26,
+    borderRadius: 10,
+  },
+  productsContainer: {
+    marginTop: 20,
+    rowGap: 14,
+  },
+  productItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#dce1eb",
+    borderRadius: 10,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+  },
+  productInfo: {
+    rowGap: 12,
+    marginLeft: 14,
+  },
+  productTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 10,
+  },
+  productPriceContainer: {
+    marginLeft: "auto",
+    rowGap: 4,
+  },
+  productPlusIcon: {
+    width: 20,
+    height: 20,
+    marginLeft: "auto",
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  seeAllProductsButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    height: 40,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 10,
+  },
+  seeAllProductsText: {
+    color: "#9e9ea6",
+    fontWeight: "500",
+  },
+  badge: {
+    position: "absolute",
+    top: -3,
+    right: -14,
+    backgroundColor: "red",
+    color: "white",
+    borderRadius: 50,
+    paddingHorizontal: 4,
+    fontSize: 10,
+  },
+});
 
 export default Screen02;
