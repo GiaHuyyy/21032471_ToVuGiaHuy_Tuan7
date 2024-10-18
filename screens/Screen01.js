@@ -1,40 +1,55 @@
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
 
 const Screen01 = () => {
   const navigation = useNavigation();
   const [isPassword, setIsPassword] = useState(false);
-  const users = [
-    {
-      email: "abc@gmail.com",
-      password: "12345",
-    },
-    {
-      email: "abc1@gmail.com",
-      password: "12345",
-    },
-    {
-      email: "abc2@gmail.com",
-      password: "12345",
-    },
-    {
-      email: "abc3@gmail.com",
-      password: "12345",
-    },
-    {
-      email: "abc4@gmail.com",
-      password: "12345",
-    },
-  ];
+  // const users = [
+  //   {
+  //     email: "abc@gmail.com",
+  //     password: "12345",
+  //   },
+  //   {
+  //     email: "abc1@gmail.com",
+  //     password: "12345",
+  //   },
+  //   {
+  //     email: "abc2@gmail.com",
+  //     password: "12345",
+  //   },
+  //   {
+  //     email: "abc3@gmail.com",
+  //     password: "12345",
+  //   },
+  //   {
+  //     email: "abc4@gmail.com",
+  //     password: "12345",
+  //   },
+  // ];
 
   const [submit, setSubmit] = useState({
     email: "abc@gmail.com",
     password: "",
   });
+
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("https://6459bfa395624ceb21eebb61.mockapi.io/Tuan7/v1/users");
+        setUsers(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleSubmit = () => {
     if (submit.email === "" || submit.password === "") {
@@ -122,14 +137,14 @@ const Screen01 = () => {
               marginTop: 20,
               height: 40,
               width: "100%",
-              backgroundColor: "#519ca6",
+              backgroundColor: "#00bdd6",
               borderRadius: 10,
               alignItems: "center",
               justifyContent: "center",
             }}
             onPress={handleSubmit}
           >
-            <Text>Continute</Text>
+            <Text style={{ color: "#fff", fontSize: 16 }}>Continute</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: 30, flexDirection: "row", alignItems: "center", width: "100%" }}>
