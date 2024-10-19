@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Image, Pressable, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Image, Pressable, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -17,6 +17,11 @@ const Screen02 = () => {
   const [product, setProduct] = useState([]);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [visibleCart, setVisibleCart] = useState(false);
 
   // Tạo ref cho TextInput
   const searchInputRef = useRef(null);
@@ -43,26 +48,6 @@ const Screen02 = () => {
       searchInputRef.current.focus();
     }
   }, [searchKeyword]);
-
-  const filteredProducts = useMemo(() => {
-    const selectedCategory = product.find((item) => item[focus]);
-    if (!selectedCategory) return [];
-
-    const productsToShow = showAllProducts ? selectedCategory[focus] : selectedCategory[focus].slice(0, 4);
-    // Lọc sản phẩm dựa trên selectedOption và searchKeyword
-    // const filteredProducts = productsToShow.filter((item) => {
-    //   const matchesOption = item.category === selectedOption;
-    //   const matchesKeyword = item.title.toLowerCase().includes(searchKeyword.toLowerCase());
-    //   return matchesOption && matchesKeyword;
-    // });
-
-    return productsToShow.filter((item) => item.title.toLowerCase().includes(searchKeyword.toLowerCase()));
-  }, [product, focus, showAllProducts, searchKeyword]);
-
-  const renderProducts = useCallback(
-    () => filteredProducts.map((item) => <ProductItem key={item.id} item={item} />),
-    [filteredProducts]
-  );
 
   const CategoryItem = useCallback(
     ({ image, backgroundColor, type }) => {
@@ -95,7 +80,7 @@ const Screen02 = () => {
     [selectedOption]
   );
 
-  const ProductItem = ({ item }) => (
+  const ProductItem = ({ item, isCart }) => (
     <View style={styles.productItem}>
       <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="contain" />
       <View style={styles.productInfo}>
@@ -103,13 +88,39 @@ const Screen02 = () => {
         <Image source={require("../assets/Data/ratting.png")} />
       </View>
       <View style={styles.productPriceContainer}>
-        <TouchableOpacity>
-          <Image source={require("../assets/Data/plus.png")} style={styles.productPlusIcon} resizeMode="contain" />
-        </TouchableOpacity>
+        {isCart ? (
+          <></>
+        ) : (
+          <TouchableOpacity
+            onPress={() => {
+              setCurrentProduct(item); // Lưu trữ thông tin sản phẩm hiện tại
+              setVisible(true);
+            }}
+          >
+            <Image source={require("../assets/Data/plus.png")} style={styles.productPlusIcon} resizeMode="contain" />
+          </TouchableOpacity>
+        )}
         <Text style={styles.productPrice}>{item.price}</Text>
       </View>
     </View>
   );
+
+  const filteredProducts = useMemo(() => {
+    const selectedCategory = product.find((item) => item[focus]);
+    if (!selectedCategory) return [];
+
+    const productsToShow = showAllProducts ? selectedCategory[focus] : selectedCategory[focus].slice(0, 4);
+
+    return productsToShow.filter((item) => item.title.toLowerCase().includes(searchKeyword.toLowerCase()));
+  }, [product, focus, showAllProducts, searchKeyword]);
+
+  const renderProducts = useCallback(
+    () => filteredProducts.map((item) => <ProductItem key={item.id} item={item} />),
+    [filteredProducts]
+  );
+
+  const renderCart = useMemo(() => cart.map((item) => <ProductItem key={item.id} item={item} isCart />), [cart]);
+
   const MainScreen = () => {
     return (
       <SafeAreaView style={styles.safeAreaView}>
@@ -121,7 +132,7 @@ const Screen02 = () => {
                 <Text style={styles.headerTitle}>Electronics</Text>
               </TouchableOpacity>
               <View style={styles.headerIcons}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => setVisibleCart(true)}>
                   <AntDesign name="shoppingcart" size={24} color="black" />
                 </TouchableOpacity>
                 <TouchableOpacity>
@@ -129,6 +140,31 @@ const Screen02 = () => {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Modal cart */}
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={visibleCart}
+              onRequestClose={() => setVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Cart</Text>
+                  <ScrollView style={{ width: "100%" }}>
+                    <View style={{ rowGap: 10 }}>{renderCart}</View>
+                  </ScrollView>
+                  <View style={styles.modalButtonsContainer}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => setVisibleCart(false)}
+                    >
+                      <Text style={styles.modalButtonText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
 
             <View style={styles.searchContainer}>
               <Pressable style={styles.searchBox}>
@@ -154,6 +190,7 @@ const Screen02 = () => {
               </TouchableOpacity>
             </View>
 
+            {/* Categories */}
             <View style={styles.categoriesContainer}>
               <CategoryItem image={require("../assets/Data/smart.png")} backgroundColor="#dbcaf6" type="smart" />
               <CategoryItem image={require("../assets/Data/ipad.png")} backgroundColor="#c5d1f7" type="ipad" />
@@ -166,8 +203,48 @@ const Screen02 = () => {
               <OptionItem title="Popular" />
             </View>
 
+            {/* Product item */}
             <View style={styles.productsContainer}>{renderProducts()}</View>
 
+            {/* Modal add */}
+            <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={() => setVisible(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Add to cart</Text>
+                  {currentProduct && (
+                    <>
+                      <Image
+                        source={{ uri: currentProduct.image }}
+                        style={styles.modalProductImage}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.modalProductTitle}>{currentProduct.title}</Text>
+                      <Text style={styles.modalProductPrice}>{currentProduct.price}</Text>
+                    </>
+                  )}
+                  <View style={styles.modalButtonsContainer}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => setVisible(false)}
+                    >
+                      <Text style={styles.modalButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.addButton]}
+                      onPress={() => {
+                        setCart((prev) => [...prev, currentProduct]);
+                        alert("Add to cart successfully!");
+                        setVisible(false);
+                      }}
+                    >
+                      <Text style={styles.modalButtonText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
+            {/* Button */}
             <TouchableOpacity style={styles.seeAllProductsButton} onPress={() => setShowAllProducts((prev) => !prev)}>
               <Text style={styles.seeAllProductsText}>{showAllProducts ? "See less" : "See all"}</Text>
             </TouchableOpacity>
@@ -176,6 +253,7 @@ const Screen02 = () => {
       </SafeAreaView>
     );
   };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -391,6 +469,64 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     paddingHorizontal: 4,
     fontSize: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    alignItems: "center",
+    width: "90%",
+    height: "50%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  modalProductImage: {
+    width: 100,
+    height: 100,
+    marginVertical: 20,
+  },
+  modalProductTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  modalProductPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginVertical: 10,
+  },
+  modalButtonsContainer: {
+    width: "100%",
+    marginTop: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  cancelButton: {
+    backgroundColor: "red",
+  },
+  addButton: {
+    backgroundColor: "blue",
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
