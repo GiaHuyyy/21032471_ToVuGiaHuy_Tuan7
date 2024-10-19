@@ -20,7 +20,7 @@ const Screen02 = () => {
   const [visible, setVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [cart, setCart] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
+  // const [totalPrice, setTotalPrice] = useState(0);
   const [visibleCart, setVisibleCart] = useState(false);
 
   // Tạo ref cho TextInput
@@ -100,7 +100,7 @@ const Screen02 = () => {
             <Image source={require("../assets/Data/plus.png")} style={styles.productPlusIcon} resizeMode="contain" />
           </TouchableOpacity>
         )}
-        <Text style={styles.productPrice}>{item.price}</Text>
+        <Text style={styles.productPrice}>{item.price}</Text>                                                               
       </View>
     </View>
   );
