@@ -32,7 +32,7 @@ const Screen02 = () => {
   const [visible, setVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [cart, setCart] = useState([]);
-  // const [totalPrice, setTotalPrice] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const [visibleCart, setVisibleCart] = useState(false);
 
   // Tạo ref cho TextInput
@@ -83,6 +83,59 @@ const Screen02 = () => {
       searchInputRef.current.focus();
     }
   }, [searchKeyword]);
+
+  const totalPrice = useMemo(() => {
+    return cart.reduce((sum, item) => {
+      const price = parseFloat(item.price.replace("$", ""));
+      return sum + price * item.quantity;
+    }, 0);
+  }, [cart]);
+
+  const handleAddToCart = () => {
+    const existingProductIndex = cart.findIndex((item) => item.id === currentProduct.id);
+
+    if (existingProductIndex !== -1) {
+      // If product exists, update quantity
+      const updatedCart = cart.map((item, index) => {
+        if (index === existingProductIndex) {
+          return {
+            ...item,
+            quantity: item.quantity + quantity,
+          };
+        }
+        return item;
+      });
+      setCart(updatedCart);
+    } else {
+      // If product doesn't exist, add new item
+      const newProduct = {
+        ...currentProduct,
+        quantity: quantity,
+      };
+      setCart((prev) => [...prev, newProduct]);
+    }
+
+    alert("Add to cart successfully!");
+    setVisible(false);
+    setQuantity(1); // Reset quantity
+  };
+
+  const increaseQuantity = () => {
+    setQuantity((prev) => prev + 1);
+  };
+
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
+  };
+
+  const calculateTotalPrice = useMemo(() => {
+    return cart.reduce((total, item) => {
+      const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+      return total + price * item.quantity;
+    }, 0);
+  }, [cart]);
 
   const handleSearchChange = useCallback((text) => {
     setSearchKeyword(text);
@@ -185,14 +238,29 @@ const Screen02 = () => {
               animationType="fade"
               transparent={true}
               visible={visibleCart}
-              onRequestClose={() => setVisible(false)}
+              onRequestClose={() => setVisibleCart(false)}
             >
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Cart</Text>
-                  <ScrollView style={{ width: "100%" }}>
-                    <View style={{ rowGap: 10 }}>{renderCart}</View>
+                  <ScrollView style={styles.cartScrollView}>
+                    <View style={styles.cartItemsContainer}>
+                      {cart.map((item) => (
+                        <View key={item.id} style={styles.cartItem}>
+                          <ProductItem item={item} isCart />
+                          <View style={styles.cartItemDetails}>
+                            <Text style={styles.quantityLabel}>Quantity: {item.quantity}</Text>
+                            <Text style={styles.itemTotalPrice}>
+                              Total: ${(parseFloat(item.price.replace(/[^0-9.-]+/g, "")) * item.quantity).toFixed(2)}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
                   </ScrollView>
+                  <View style={styles.cartSummary}>
+                    <Text style={styles.totalPriceText}>Total: ${calculateTotalPrice.toFixed(2)}</Text>
+                  </View>
                   <View style={styles.modalButtonsContainer}>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.cancelButton]}
@@ -246,7 +314,15 @@ const Screen02 = () => {
             <View style={styles.productsContainer}>{renderProducts()}</View>
 
             {/* Modal add */}
-            <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={() => setVisible(false)}>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={visible}
+              onRequestClose={() => {
+                setVisible(false);
+                setQuantity(1);
+              }}
+            >
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Add to cart</Text>
@@ -259,23 +335,30 @@ const Screen02 = () => {
                       />
                       <Text style={styles.modalProductTitle}>{currentProduct.title}</Text>
                       <Text style={styles.modalProductPrice}>{currentProduct.price}</Text>
+
+                      {/* Quantity controls */}
+                      <View style={styles.quantityContainer}>
+                        <TouchableOpacity style={styles.quantityButton} onPress={decreaseQuantity}>
+                          <Text style={styles.quantityButtonText}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{quantity}</Text>
+                        <TouchableOpacity style={styles.quantityButton} onPress={increaseQuantity}>
+                          <Text style={styles.quantityButtonText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   )}
                   <View style={styles.modalButtonsContainer}>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => setVisible(false)}
+                      onPress={() => {
+                        setVisible(false);
+                        setQuantity(1);
+                      }}
                     >
                       <Text style={styles.modalButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.addButton]}
-                      onPress={() => {
-                        setCart((prev) => [...prev, currentProduct]);
-                        alert("Add to cart successfully!");
-                        setVisible(false);
-                      }}
-                    >
+                    <TouchableOpacity style={[styles.modalButton, styles.addButton]} onPress={handleAddToCart}>
                       <Text style={styles.modalButtonText}>Add</Text>
                     </TouchableOpacity>
                   </View>
@@ -621,6 +704,93 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  // Updated and new styles
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    padding: 10,
+    width: 150,
+  },
+  quantityButton: {
+    backgroundColor: "#fff",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  quantityButtonText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#42b7c6",
+  },
+  quantityText: {
+    fontSize: 18,
+    fontWeight: "600",
+    minWidth: 30,
+    textAlign: "center",
+  },
+  cartScrollView: {
+    width: "100%",
+    maxHeight: "70%",
+  },
+  cartItemsContainer: {
+    rowGap: 10,
+    paddingVertical: 10,
+  },
+  cartItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingBottom: 10,
+  },
+  cartItemDetails: {
+    marginLeft: 84,
+    marginTop: 5,
+  },
+  quantityLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  itemTotalPrice: {
+    fontSize: 14,
+    color: "#42b7c6",
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  cartSummary: {
+    width: "100%",
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    marginTop: 10,
+  },
+  totalPriceText: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "right",
+    color: "#42b7c6",
+  },
+  modalContent: {
+    alignItems: "center",
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: "80%",
   },
 });
 
