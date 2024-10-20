@@ -1,6 +1,18 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Image, Pressable, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Easing,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -26,6 +38,12 @@ const Screen02 = () => {
   // Tạo ref cho TextInput
   const searchInputRef = useRef(null);
 
+  // Animation
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef(null);
+  const bannerWidth = 328;
+  const totalBanners = 4;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -38,9 +56,26 @@ const Screen02 = () => {
     fetchProducts();
   }, []);
 
-  const handleSearchChange = useCallback((text) => {
-    setSearchKeyword(text);
-  }, []);
+  // Animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newValue = scrollX._value - bannerWidth;
+      if (Math.abs(newValue) >= bannerWidth * totalBanners) {
+        scrollX.setValue(0);
+      } else {
+        Animated.timing(scrollX, {
+          toValue: newValue,
+          duration: 500,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }).start();
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [scrollX]);
+
+  const dotPosition = Animated.divide(scrollX, bannerWidth);
 
   // Focus vào lại TextInput
   useEffect(() => {
@@ -48,6 +83,10 @@ const Screen02 = () => {
       searchInputRef.current.focus();
     }
   }, [searchKeyword]);
+
+  const handleSearchChange = useCallback((text) => {
+    setSearchKeyword(text);
+  }, []);
 
   const CategoryItem = useCallback(
     ({ image, backgroundColor, type }) => {
@@ -100,7 +139,7 @@ const Screen02 = () => {
             <Image source={require("../assets/Data/plus.png")} style={styles.productPlusIcon} resizeMode="contain" />
           </TouchableOpacity>
         )}
-        <Text style={styles.productPrice}>{item.price}</Text>                                                               
+        <Text style={styles.productPrice}>{item.price}</Text>
       </View>
     </View>
   );
@@ -248,6 +287,56 @@ const Screen02 = () => {
             <TouchableOpacity style={styles.seeAllProductsButton} onPress={() => setShowAllProducts((prev) => !prev)}>
               <Text style={styles.seeAllProductsText}>{showAllProducts ? "See less" : "See all"}</Text>
             </TouchableOpacity>
+
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ref={scrollViewRef}
+              scrollEventThrottle={16}
+              onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+                useNativeDriver: false,
+              })}
+            >
+              <Animated.View style={{ flexDirection: "row", marginTop: 20, transform: [{ translateX: scrollX }] }}>
+                <Image source={require("../assets/Data/banner.png")} style={{ width: bannerWidth, height: 128 }} />
+                <Image source={require("../assets/Data/banner1.png")} style={{ width: bannerWidth, height: 128 }} />
+                <Image source={require("../assets/Data/banner2.png")} style={{ width: bannerWidth, height: 128 }} />
+                <Image source={require("../assets/Data/banner3.png")} style={{ width: bannerWidth, height: 128 }} />
+              </Animated.View>
+            </Animated.ScrollView>
+
+            <View style={{ flexDirection: "row", columnGap: 6, marginTop: 10, marginHorizontal: "auto" }}>
+              {Array.from({ length: totalBanners }).map((_, i) => {
+                const backgroundColor = dotPosition.interpolate({
+                  inputRange: [i - 1, i, i + 1],
+                  outputRange: ["#ccc", "#42b7c6", "#ccc"],
+                  extrapolate: "clamp",
+                });
+                const width = dotPosition.interpolate({
+                  inputRange: [i - 1, i, i + 1],
+                  outputRange: [8, 14, 8],
+                  extrapolate: "clamp",
+                });
+                const scale = dotPosition.interpolate({
+                  inputRange: [i - 1, i, i + 1],
+                  outputRange: [0.8, 1.2, 0.8],
+                  extrapolate: "clamp",
+                });
+                return (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      styles.dot,
+                      {
+                        backgroundColor,
+                        width,
+                        transform: [{ scale }],
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -298,12 +387,17 @@ const Screen02 = () => {
 };
 
 const styles = StyleSheet.create({
+  dot: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ccc",
+  },
   safeAreaView: {
     flex: 1,
     backgroundColor: "#fff",
   },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
     paddingBottom: 20,
   },
   header: {
@@ -395,7 +489,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    height: 100,
+    height: 90,
     borderWidth: 2,
   },
   optionsContainer: {
