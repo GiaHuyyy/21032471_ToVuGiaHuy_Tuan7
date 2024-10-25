@@ -388,7 +388,7 @@ const Screen02 = () => {
               </Animated.View>
             </Animated.ScrollView>
 
-            <View style={{ flexDirection: "row", columnGap: 6, marginTop: 10, marginHorizontal: "auto" }}>
+            {/* <View style={{ flexDirection: "row", columnGap: 6, marginTop: 10, marginHorizontal: "auto" }}>
               {Array.from({ length: totalBanners }).map((_, i) => {
                 const backgroundColor = dotPosition.interpolate({
                   inputRange: [i - 1, i, i + 1],
@@ -419,7 +419,7 @@ const Screen02 = () => {
                   />
                 );
               })}
-            </View>
+            </View> */}
           </View>
         </ScrollView>
       </SafeAreaView>
