@@ -1,30 +1,33 @@
 ```mermaid
 graph TD
     subgraph Actor
-        Start([Start]) --> A1[ND chọn trang đăng ký]
-        A3[ND nhập thông tin tài khoản]
-        A5[Thông báo lỗi dữ liệu]
+        Start([Start]) --> A1[ND nhập nội dung tin nhắn]
+        A2[ND nhấn nút gửi hoặc Enter]
+        A3[ND chọn gửi biểu tượng cảm xúc]
     end
     
     subgraph System
-        B1[Hệ thống hiển thị form đăng ký]
-        B3{Kiểm tra ràng buộc dữ liệu}
-        B4{Kiểm tra email/SĐT đã tồn tại}
-        B5[Cập nhật vào CSDL]
-        B6[Thông báo thành công]
-        B7[Chuyển đến trang đăng nhập]
+        B1{Kiểm tra nội dung tin nhắn}
+        B2[Tạo tin nhắn mới]
+        B3[Lưu tin nhắn vào CSDL]
+        B4[Hiển thị tin nhắn cho người gửi]
+        B5[Gửi tin nhắn đến người nhận qua socket]
+        B6[Thông báo lỗi kết nối]
+        B7[Lưu tin nhắn ở chế độ chờ]
         Finish([Finish])
     end
     
-    A1 --> B1
-    B1 --> A3
-    A3 --> B3
-    B3 -->|Không hợp lệ| A5
-    A5 --> A3
-    B3 -->|Hợp lệ| B4
-    B4 -->|Đã tồn tại| A5
-    B4 -->|Chưa tồn tại| B5
-    B5 --> B6
+    A1 --> A2
+    A1 --> A3
+    A3 --> A2
+    A2 --> B1
+    B1 -->|Tin nhắn rỗng| Finish
+    B1 -->|Tin nhắn hợp lệ| B2
+    B2 --> B3
+    B3 -->|Thành công| B4
+    B3 -->|Lỗi kết nối| B6
     B6 --> B7
     B7 --> Finish
+    B4 --> B5
+    B5 --> Finish
 ```
