@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     Start([Bắt đầu]) --> AccessRegPage[Truy cập trang đăng ký]
     AccessRegPage --> DisplayForm[Hiển thị form đăng ký]
@@ -19,3 +20,4 @@ flowchart TD
     
     AccessRegPage -->|Đã có tài khoản| GoToLogin[Chọn đăng nhập]
     GoToLogin --> RedirectLogin
+```
