@@ -1,23 +1,18 @@
 ```mermaid
-flowchart TD
-    Start([Bắt đầu]) --> AccessRegPage[Truy cập trang đăng ký]
-    AccessRegPage --> DisplayForm[Hiển thị form đăng ký]
-    DisplayForm --> InputInfo[Nhập thông tin]
-    InputInfo --> ClickRegister[Nhấn nút Đăng ký]
-    ClickRegister --> ValidateData{Kiểm tra tính hợp lệ của dữ liệu}
-    ValidateData -->|Không hợp lệ| ShowInvalidError[Hiển thị thông báo lỗi]
-    ShowInvalidError --> InputInfo
-    ValidateData -->|Hợp lệ| CheckExisting{Kiểm tra email/SĐT đã tồn tại}
-    CheckExisting -->|Đã tồn tại| ShowExistError[Hiển thị lỗi đã tồn tại]
-    ShowExistError --> InputInfo
-    CheckExisting -->|Chưa tồn tại| HashPassword[Mã hóa mật khẩu]
-    HashPassword --> SaveUserInfo[Lưu thông tin vào CSDL]
-    SaveUserInfo --> CreateAvatar[Tạo ảnh đại diện mặc định]
-    CreateAvatar --> ShowSuccess[Hiển thị thông báo thành công]
-    ShowSuccess --> RedirectLogin[Chuyển đến trang đăng nhập]
-    RedirectLogin --> UserLogin[Người dùng đăng nhập]
-    UserLogin --> End([Kết thúc])
+graph TD
+    subgraph Actor
+        Start([Start]) --> A1[ND chọn trang đăng ký]
+        A3[ND nhập thông tin tài khoản]
+        A5[Thông báo lỗi dữ liệu]
+    end
     
-    AccessRegPage -->|Đã có tài khoản| GoToLogin[Chọn đăng nhập]
-    GoToLogin --> RedirectLogin
+    subgraph System
+        B1[Hệ thống hiển thị form đăng ký]
+        B3{Kiểm tra ràng buộc dữ liệu}
+        B4{Kiểm tra email/SĐT đã tồn tại}
+        B5[Cập nhật vào CSDL]
+        B6[Thông báo thành công]
+        B7[Chuyển đến trang đăng nhập]
+        Finish([Finish])
+    end
 ```
