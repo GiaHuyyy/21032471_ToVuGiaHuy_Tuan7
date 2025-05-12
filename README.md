@@ -1,32 +1,30 @@
 ```mermaid
-sequenceDiagram
-    participant ND as Người dùng
-    participant GD_Chat as GD_Chat
-    participant Control_Message as Control_Message
-    participant Socket as Socket_Service
-    participant Message as Message_Repository
-    
-    ND->>GD_Chat: 1. Nhập nội dung tin nhắn
-    ND->>GD_Chat: 2. Nhấn nút gửi/Enter
-    GD_Chat->>Control_Message: 2.1 KiemTraNoiDung(tinNhan)
-    
-    alt [isEmpty = true]
-        Control_Message-->>GD_Chat: 2.1.1 KetThuc()
-    else [isEmpty = false]
-        Control_Message->>Control_Message: 2.1.2 TaoTinNhanMoi(nguoiGui, nguoiNhan, noiDung, thoiGian)
-        Control_Message->>Message: 3. LuuTinNhan(tinNhan)
-        
-        alt [success = true]
-            Message-->>Control_Message: 3.1 XacNhanLuuThanhCong()
-            Control_Message->>GD_Chat: 3.2 HienThiTinNhan(tinNhan)
-            GD_Chat-->>ND: 3.3 Hiển thị tin nhắn
-            Control_Message->>Socket: 4. GuiTinNhanDenNguoiNhan(tinNhan)
-            Socket-->>Control_Message: 4.1 XacNhanGui()
-        else [success = false]
-            Message-->>Control_Message: 3.1 ThongBaoLoi()
-            Control_Message->>GD_Chat: 3.2 HienThiLoi()
-            GD_Chat-->>ND: 3.3 Hiển thị thông báo lỗi
-            Control_Message->>Message: 4. LuuTinNhanChoGui(tinNhan)
-        end
+graph TD
+    subgraph Actor
+        Start([Start]) --> A1[ND chọn trang đăng ký]
+        A3[ND nhập thông tin tài khoản]
+        A5[Thông báo lỗi dữ liệu]
     end
+    
+    subgraph System
+        B1[Hệ thống hiển thị form đăng ký]
+        B3{Kiểm tra ràng buộc dữ liệu}
+        B4{Kiểm tra email/SĐT đã tồn tại}
+        B5[Cập nhật vào CSDL]
+        B6[Thông báo thành công]
+        B7[Chuyển đến trang đăng nhập]
+        Finish([Finish])
+    end
+    
+    A1 --> B1
+    B1 --> A3
+    A3 --> B3
+    B3 -->|Không hợp lệ| A5
+    A5 --> A3
+    B3 -->|Hợp lệ| B4
+    B4 -->|Đã tồn tại| A5
+    B4 -->|Chưa tồn tại| B5
+    B5 --> B6
+    B6 --> B7
+    B7 --> Finish
 ```
