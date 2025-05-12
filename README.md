@@ -1,35 +1,33 @@
 ```mermaid
-sequenceDiagram
-    participant ND as Người dùng
-    participant GD_Chat as GD_Chat
-    participant Control_Message as Control_Message
-    participant Message as Message_Repository
-    participant Socket as Socket_Service
-    
-    ND->>GD_Chat: 1. Nhập nội dung tin nhắn
-    ND->>GD_Chat: 2. Nhấn nút gửi/Enter
-    GD_Chat->>Control_Message: 3. KiemTraNoiDung(tinNhan)
-    
-    alt [Tin nhắn rỗng]
-        Control_Message-->>GD_Chat: 3a. KetThuc()
-        GD_Chat-->>ND: 3b. Không thực hiện gửi
-    else [Tin nhắn hợp lệ]
-        Control_Message->>Control_Message: 4. TaoTinNhanMoi(nguoiGui, nguoiNhan, noiDung, thoiGian)
-        Control_Message->>Message: 5. LuuTinNhan(tinNhan)
-        
-        alt [Thành công]
-            Message-->>Control_Message: 5.1. XacNhanLuuThanhCong()
-            Control_Message->>GD_Chat: 6. HienThiTinNhan(tinNhan)
-            GD_Chat-->>ND: 6.1. Hiển thị tin nhắn trong khung chat
-            Control_Message->>Socket: 7. GuiTinNhanDenNguoiNhan(tinNhan)
-            Socket-->>Control_Message: 7.1. XacNhanGui()
-            Control_Message-->>GD_Chat: 8. KetThuc()
-        else [Lỗi kết nối]
-            Message-->>Control_Message: 5a.1. ThongBaoLoi()
-            Control_Message->>GD_Chat: 5a.2. HienThiLoi()
-            GD_Chat-->>ND: 5a.3. Hiển thị thông báo lỗi
-            Control_Message->>Message: 5b. LuuTinNhanChoGui(tinNhan)
-            Control_Message-->>GD_Chat: 5c. KetThuc()
-        end
+graph TD
+    subgraph Actor
+        Start([Start]) --> A1[ND nhập nội dung tin nhắn]
+        A2[ND nhấn nút gửi hoặc Enter]
+        A3[ND chọn gửi biểu tượng cảm xúc]
     end
+    
+    subgraph System
+        B1{Kiểm tra nội dung tin nhắn}
+        B2[Tạo tin nhắn mới]
+        B3[Lưu tin nhắn vào CSDL]
+        B4[Hiển thị tin nhắn cho người gửi]
+        B5[Gửi tin nhắn đến người nhận qua socket]
+        B6[Thông báo lỗi kết nối]
+        B7[Lưu tin nhắn ở chế độ chờ]
+        Finish([Finish])
+    end
+    
+    A1 --> A2
+    A1 --> A3
+    A3 --> A2
+    A2 --> B1
+    B1 -->|Tin nhắn rỗng| Finish
+    B1 -->|Tin nhắn hợp lệ| B2
+    B2 --> B3
+    B3 -->|Thành công| B4
+    B3 -->|Lỗi kết nối| B6
+    B6 --> B7
+    B7 --> Finish
+    B4 --> B5
+    B5 --> Finish
 ```
